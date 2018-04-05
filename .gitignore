@@ -1,0 +1,13 @@
+*.swp
+*.ui
+*.c
+*.ui
+*.uo
+Lexer.sml
+Parser.output
+Parser.sig
+Parser.sml
+*.out
+Compiler
+ComRML
+RIL

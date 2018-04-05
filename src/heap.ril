@@ -1,0 +1,180 @@
+// Tests heap manager by allocating list of random integers
+// until allocation fails.
+// Runs 20 times with different numbers
+// and prints number of unused nodes for each
+// Inputs m, so heapSize is 2^m + b - 1
+
+begin main
+includeC "A = 0;\n";
+// initialize hash codes
+hashA += 366001;
+hashB += 827927;
+hashC += 593041;
+hashT += hashA;
+
+// heap size setup
+// TODO: Fix log of heap size to constant, and give input as args to main func
+//read m; // log of heap size
+m += 16;
+b += 32; // segment size
+b1 += b - 1;
+hsize += 1<<m;
+hsize += b1; // number of nodes = 2^m + b - 1
+hsizeB += hsize << 2;
+hsizeB += hsize << 2;
+hsizeB += hsize << 2; // number of bytes
+H += 4800; // heap start
+endH += hsizeB + H; // heap end
+lastH += endH - 16; // address of last node in heap
+mask += 4<<m; // Mask used for hashing: 4*(2^m)
+mask -= 4; // for overlapping segments
+//mask -= b<<2; // for non-overlapping segments
+segSize += b1<<2;
+segSize += b1<<2;
+segSize += b1<<2; // size (in bytes) of segment to search =  12(b-1).
+
+// INSERT MAIN FUNCTION HERE
+
+end main
+
+// copy and build operations
+
+begin copy
+  assert copyP > 0 && copyQ == 0;
+  copyP < H --> copySymbol;
+    M[copyP] += 1;
+    ttt += M[copyP];
+    includeC "if (A < var_ttt) A = var_ttt;";
+    ttt -= M[copyP];
+  copySymbol <-- copyP < H;
+  copyQ += copyP;
+  assert copyP > 0 && copyQ == copyP
+end copy
+
+begin build  // optimized version
+assert buildA != 0 && buildB != 0 && buildC != 0 && buildP == 0 && hashV == 0 && segEnd == 0;
+call hash;
+// test buildA buildB hashV "(%d,%d):%d|";
+segEnd += hashV + segSize;
+buildP += hashV;
+buildSearchSame <-- buildP > hashV;
+  M[buildP] == 0 --> buildNext;
+    buildP += 4;
+    M[buildP] != buildA --> buildNotA;
+      buildP += 4;
+      M[buildP] != buildB --> buildNotB;
+        buildP += 4;
+        M[buildP] == buildC --> buildFoundSame;
+        buildP -= 4;
+      buildNotB <-- M[buildP] != buildB;
+      buildP -= 4;
+    buildNotA <-- M[buildP] != buildA;
+    buildP -= 4;
+  buildNext <-- M[buildP] == 0;
+  buildP += 16;
+buildP <= segEnd --> buildSearchSame;
+buildSearchEmpty <-- buildP <= segEnd;
+  buildP -= 16;
+  buildP < hashV --> buildFail;
+  M[buildP] != 0 --> buildSearchEmpty;
+  segEnd -= hashV + segSize;
+  uncall hash;
+  M[buildP] += 1;
+  buildP += 4;
+  buildA <-> M[buildP];
+  buildP += 4;
+  buildB <-> M[buildP];
+  buildP += 4;
+  buildC <-> M[buildP];
+  buildP -= 12;
+buildEnd <-- M[buildP] > 1;
+assert buildP !& 3 && buildP >= H && buildA == 0 && buildB == 0 && buildC == 0;
+assert hashV == 0 && segEnd == 0;
+failedBuild <-- failed > 0 // return point for fail handler
+end build
+
+buildFoundSame <--
+  test "Found identical build";
+  segEnd -= hashV + segSize; // was 60
+  uncall hash;
+  buildC < H --> buildSymbolC;
+    M[buildC] -= 1;
+  buildSymbolC <-- buildC < H;
+  buildC -= M[buildP];
+  buildP -= 4;
+  buildB < H --> buildSymbolB;
+    M[buildB] -= 1;
+  buildSymbolB <-- buildB < H;
+  buildB -= M[buildP];
+  buildP -= 4;
+  buildA < H --> buildSymbolA;
+    M[buildA] -= 1;
+  buildSymbolA <-- buildA < H;
+  buildA -= M[buildP];
+  buildP -= 4;
+  M[buildP] += 1;
+  ttt += M[buildP];
+  includeC "if (A < var_ttt) A = var_ttt;";
+  ttt -= M[buildP]
+--> buildEnd
+
+
+// handle allocation failure
+// write number of free nodes
+buildFail <--
+failed += 1;
+assert z == 0;
+z += H;
+dump <-- H != z;
+M[z] > 0 --> used;
+y += 1;
+used <-- M[z] > 0;
+z += 12;
+z < endH --> dump;
+test y "%d,"
+--> failedBuild // jump to end of build procedure
+
+begin hash
+assert hashV == 0 && hashA == 366001 && hashB == 827927 && hashC == 593041;
+hashA += buildA;
+hashB += buildB;
+hashC += buildC;
+hashA -= hashB + hashC;
+hashA ^= hashC >> 13;
+hashB -= hashC + hashA;
+hashB ^= hashA << 8;
+hashC -= hashA + hashB;
+hashC ^= hashB >> 13;
+hashA -= hashB + hashC;
+hashA ^= hashC >> 12;
+hashB -= hashC + hashA;
+hashB ^= hashA << 16;
+hashC -= hashA + hashB;
+hashC ^= hashB >> 5;
+hashA -= hashB + hashC;
+hashA ^= hashC >> 3;
+hashB -= hashC + hashA;
+hashB ^= hashA << 10;
+hashC -= hashA + hashB;
+hashC ^= hashB >> 15;
+hashV += hashC & mask;
+hashV += hashC & mask;
+hashV += hashC & mask;
+hashV += hashC & mask;
+hashV += H
+end hash
+
+begin hash_alt
+assert hashV == 0 && hashT ==  366001;
+hashT ^= buildA << 7;
+hashT += buildA >> 1;
+hashT ^= buildB << 5;
+hashT += buildB >> 3;
+hashT ^= buildC << 3;
+hashT += buildC >> 5;
+hashV += hashT & mask;
+hashV += hashT & mask;
+hashV += hashT & mask;
+hashV += hashT & mask;
+hashV += H
+end hash_alt

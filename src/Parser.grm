@@ -1,0 +1,43 @@
+%{
+
+open RML
+
+%}
+
+%token <int*(int*int)> NUM
+%token <string*(int*int)> ID STRINGCONST
+%token <(int*int)> FUNDEF ASSIGN PATTERN
+%token <(int*int)> EOF
+
+%start Prog
+%type <RML.Prog> Prog
+%type <RML.Func list> Funcs
+%type <RML.Func> Func
+%type <RML.Type> Type
+%type <RML.Body> Body
+%type <RML.Expr> Expr
+%type <RML.Var> Var
+%type <RML.Arg> Arg
+%type <Arg list> Args
+
+%%
+
+Expr : ID { RML.ExprVar $1 }
+
+Body  : Expr { $1 }
+;
+
+Arg : ID { $1 }
+;
+
+Args : Arg Args { $1 :: $2 }
+     |          { [] }
+;
+
+Func : FUNDEF ID Args ASSIGN Body { RML.FunDef ($2, $3, $5) } 
+;
+Funcs : Func Funcs { $1 :: $2 }
+      |            { [] }
+;
+
+Prog : Funcs EOF   { $1 }
