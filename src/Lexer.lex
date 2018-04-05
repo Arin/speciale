@@ -15,10 +15,9 @@
 
   fun lexerError lexbuf s = raise LexicalError (s, getPos lexbuf)
 
-  fun keyword (s, pos) = 
-    case s of 
+  fun keyword (s, pos) =
+    case s of
       "fun" => Parser.FUNDEF pos
-
     | _     => Parser.ID (s, pos)
 }
 
@@ -31,16 +30,16 @@ rule Token = parse
   | [`0`-`9`]+       { case Int.fromString (getLexeme lexbuf) of
                             NONE   => lexerError lexbuf "Bad integer"
                           | SOME i => Parser.NUM (i, getPos lexbuf) }
-  | [`a`-`z``A`-`Z`] [`a`-`z``A`-`Z``0`-`9``_`]* 
+  | [`a`-`z``A`-`Z`] [`a`-`z``A`-`Z``0`-`9``_`]*
                      { keyword (getLexeme lexbuf, getPos lexbuf) }
   | `"` ([` ` `!` `#`-`&` `(`-`[` `]`-`~`] | `\`[` `-`~`])* `"`
-                     { Parser.STRINGCONST 
-                         ((case String.fromCString (getLexeme lexbuf) of 
+                     { Parser.STRINGCONST
+                         ((case String.fromCString (getLexeme lexbuf) of
                             NONE => lexerError lexbuf "Bad string constant"
                           | SOME s => String.substring(s,1,String.size s - 2)),
                           getPos lexbuf) }
   | `=`              { Parser.ASSIGN (getPos lexbuf) }
   | `|`              { Parser.PATTERN (getPos lexbuf) }
   | eof              { Parser.EOF (getPos lexbuf) }
-  | _                { lexerError lexbuf "Illegal symbol in input" } 
+  | _                { lexerError lexbuf "Illegal symbol in input" }
 ;

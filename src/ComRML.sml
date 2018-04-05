@@ -6,7 +6,7 @@ struct
 
   fun errorMess s = TextIO.output (TextIO.stdErr,s ^ "\n");
 
-  fun rs filename =  
+  fun rs filename =
       let
         val lexbuf = createLexerStream
 			  (BasicIO.open_in (filename ^ ".rml"))
@@ -16,7 +16,7 @@ struct
           val outstream = TextIO.openOut (filename ^ ".c")
 	   (* val () = Type.checkProgram pgm *)
         in
-          TextIO.output(outstream, Compiler.doProg pgm)
+          (TextIO.output(outstream, Compiler.doProg pgm); TextIO.closeOut(outstream))
         end
           handle Parsing.yyexit ob => errorMess "Parser-exit\n"
                | Parsing.ParseError ob =>

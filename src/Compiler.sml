@@ -1,9 +1,9 @@
-structure Compiler = 
+structure Compiler =
   struct
 
   exception Error of string*(int*int)
 
-  (* Contains information on variables and functions - 
+  (* Contains information on variables and functions -
    * Variables are written as var_varname
    * Functions are written as fun_funname *)
   val symTab = ref []
@@ -11,7 +11,7 @@ structure Compiler =
   (* Probably needs to be rewritten, to account for local vars, etc. *)
   local
     fun addSymb' x [] = ((symTab := x :: !symTab); true)
-      | addSymb' x (y :: ys) = if x=y 
+      | addSymb' x (y :: ys) = if x=y
                                then false
                                else (addSymb' x ys)
   in
@@ -20,22 +20,29 @@ structure Compiler =
 
   fun makeVar x = "var_" ^ x
 
-  (* Ensures the main function doesn't have its name changed 
+  (* Ensures the main function doesn't have its name changed
    * May be changed in next version, as formal sml doesn't have a main funct *)
   fun makeFun x = if x = "main"
                   then x
                   else "fun_" ^ x
-  (* TODO: Add args
-   * fun doArgs x =
-   *)
-
-  fun doExpr (RML.ExprVar var) =
-    RIL.Var var
-  and doFun (RML.FunDef (id, args, body)) = 
+  fun doArg arg = RIL.Read (RIL.Var arg, #2 arg)
+  and doArgs [] = RIL.Skip
+    | doArgs [arg] = doArg (arg)
+    | doArgs (arg::args) = RIL.Semi (doArg (arg), doArgs args, #2 arg)
+  and doExpr (RML.ExprVar var) =
+    RIL.Write (RIL.Var var, #2 var)
+  and doFun (RML.FunDef (id, args, body)) =
     if not (addSymb (makeFun (#1 id)))
     then raise Error ("Duplicate function declaration at", #2 id)
-    else (RIL.Begin (id), RIL.Write (doExpr body, (1,1)), RIL.End (id)) 
-  and doProg (funcs : RML.Prog) = 
-    (TextIO.output (TextIO.stdOut, "Doing prog...\n"); ComRIL.compile (map doFun
-    funcs))
+    else
+      let val arguments = doArgs args
+      in
+    (RIL.Begin (id),
+    RIL.Semi (arguments,
+              doExpr body,
+              #2 id),
+    RIL.End (id))
+    end
+  and doProg (funcs : RML.Prog) = ComRIL.compile (map doFun
+    funcs)
 end

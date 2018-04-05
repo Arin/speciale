@@ -1,1 +1,1 @@
-fun main a = a
+fun main a b = a
